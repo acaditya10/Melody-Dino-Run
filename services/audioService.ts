@@ -1,6 +1,8 @@
+import { InstrumentType } from "../types";
+
 class AudioService {
   private audioContext: AudioContext | null = null;
-  private gainNode: GainNode | null = null;
+  private instrument: InstrumentType = 'piano';
 
   constructor() {
     // AudioContext must be initialized after user interaction
@@ -19,10 +21,13 @@ class AudioService {
     this.init();
   }
 
+  public setInstrument(type: InstrumentType) {
+    this.instrument = type;
+  }
+
   private getFrequency(note: string): number {
     const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
     // Basic parsing for simple scientific notation (e.g. C4, F#5)
-    // Handle flats if necessary (simple conversion: Db -> C#)
     let cleanNote = note.toUpperCase().replace('DB', 'C#').replace('EB', 'D#').replace('GB', 'F#').replace('AB', 'G#').replace('BB', 'A#');
     
     // Extract octave
@@ -37,10 +42,6 @@ class AudioService {
 
     // Formula for frequency: f = 440 * (2^(n/12))
     // A4 is index 9 in octave 4.
-    // C0 is the base for calculation logic often used, but let's just use offset from A4.
-    // A4 = 440Hz.
-    // A4 index absolute = 4 * 12 + 9 = 57 semitones from C0.
-    
     const currentNoteAbsoluteIndex = (octave * 12) + keyIndex;
     const semitoneOffsetFromA4 = currentNoteAbsoluteIndex - 57;
 
@@ -56,22 +57,73 @@ class AudioService {
 
     const oscillator = this.audioContext.createOscillator();
     const gainNode = this.audioContext.createGain();
+    const now = this.audioContext.currentTime;
 
-    // Triangle wave sounds a bit more like a chiptune/piano hybrid
-    oscillator.type = 'triangle'; 
-    oscillator.frequency.setValueAtTime(freq, this.audioContext.currentTime);
+    // Instrument specific synthesis
+    switch (this.instrument) {
+      case 'synth':
+        // Warm Synth: Sawtooth with Lowpass Filter
+        oscillator.type = 'sawtooth';
+        
+        const filter = this.audioContext.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(800, now);
+        filter.frequency.linearRampToValueAtTime(1500, now + 0.1); // Filter sweep
+        
+        oscillator.connect(filter);
+        filter.connect(gainNode);
+        
+        // Envelope: Slower attack, longer sustain
+        gainNode.gain.setValueAtTime(0, now);
+        gainNode.gain.linearRampToValueAtTime(0.15, now + 0.05); 
+        gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+        
+        oscillator.stop(now + 0.8);
+        break;
 
-    gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
-    // Attack
-    gainNode.gain.exponentialRampToValueAtTime(0.3, this.audioContext.currentTime + 0.01);
-    // Decay
-    gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 0.4);
+      case 'flute':
+        // Flute: Sine wave with soft attack
+        oscillator.type = 'sine';
+        oscillator.connect(gainNode);
+        
+        // Envelope: Soft attack, steady sustain
+        gainNode.gain.setValueAtTime(0, now);
+        gainNode.gain.linearRampToValueAtTime(0.2, now + 0.08); 
+        gainNode.gain.linearRampToValueAtTime(0.15, now + 0.3);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+        
+        oscillator.stop(now + 0.6);
+        break;
 
-    oscillator.connect(gainNode);
+      case '8bit':
+        // 8-Bit: Square wave, snappy
+        oscillator.type = 'square';
+        oscillator.connect(gainNode);
+        
+        // Envelope: Instant attack, short decay
+        gainNode.gain.setValueAtTime(0.1, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+        
+        oscillator.stop(now + 0.2);
+        break;
+
+      case 'piano':
+      default:
+        // Piano-ish: Triangle wave
+        oscillator.type = 'triangle';
+        oscillator.connect(gainNode);
+
+        // Envelope: Sharp attack, natural decay
+        gainNode.gain.setValueAtTime(0, now);
+        gainNode.gain.linearRampToValueAtTime(0.2, now + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+        
+        oscillator.stop(now + 0.5);
+        break;
+    }
+
     gainNode.connect(this.audioContext.destination);
-
-    oscillator.start();
-    oscillator.stop(this.audioContext.currentTime + 0.5);
+    oscillator.start(now);
   }
 }
 
