@@ -15,5 +15,3 @@ export interface ParsedNotesResponse {
   notes: NoteData[];
   description?: string;
 }
-
-export type InstrumentType = 'piano' | 'synth' | 'flute' | '8bit';

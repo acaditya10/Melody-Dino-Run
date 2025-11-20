@@ -213,8 +213,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ notesData, bpm, onGameOv
         className="w-full h-auto block bg-gray-800 cursor-pointer"
         style={{ imageRendering: 'pixelated', touchAction: 'none' }}
       />
-      
-      {/* Score HUD - pointer-events-none is crucial here */}
       <div className="absolute top-4 left-4 font-retro text-white text-lg shadow-sm z-10 pointer-events-none">
         <div>SCORE: {score.toString().padStart(5, '0')}</div>
         {totalNotes > 0 && (

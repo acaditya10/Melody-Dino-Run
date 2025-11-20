@@ -61,15 +61,9 @@ class InputService {
   }
 
   private handlePointerDown(e: PointerEvent) {
-    // Avoid triggering if clicking a UI element like a button, link, input, textarea OR SELECT
+    // Avoid triggering if clicking a UI element like a button, link, or input
     const target = e.target as HTMLElement;
-    if (
-      target.closest('button') || 
-      target.closest('a') || 
-      target.closest('input') || 
-      target.closest('textarea') || 
-      target.closest('select')
-    ) {
+    if (target.closest('button') || target.closest('a') || target.closest('input') || target.closest('textarea')) {
       return;
     }
 
