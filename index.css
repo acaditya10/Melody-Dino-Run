@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter', sans-serif;
+  touch-action: none; /* Prevent pull-to-refresh on mobile */
+}
+
+.font-retro {
+  font-family: 'Press Start 2P', cursive;
+}
