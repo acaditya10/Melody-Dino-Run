@@ -1,9 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { CANVAS_HEIGHT, CANVAS_WIDTH, DINO_HEIGHT, DINO_WIDTH, DINO_X, GRAVITY, GROUND_Y, JUMP_STRENGTH, SCROLL_SPEED } from '../constants';
-import { InstrumentType, NoteData } from '../types';
+import { NoteData } from '../types';
 import { audioService } from '../services/audioService';
 import { inputService } from '../services/inputService';
-import { Settings } from 'lucide-react';
 
 interface GameCanvasProps {
   notesData: NoteData[];
@@ -15,7 +14,6 @@ interface GameCanvasProps {
 export const GameCanvas: React.FC<GameCanvasProps> = ({ notesData, bpm, onGameOver, gameActive }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [score, setScore] = useState(0);
-  const [currentInstrument, setCurrentInstrument] = useState<InstrumentType>('piano');
   
   // Determine spacing based on physics
   const jumpDuration = Math.abs((2 * JUMP_STRENGTH) / GRAVITY);
@@ -42,13 +40,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ notesData, bpm, onGameOv
     const unsubscribe = inputService.subscribe(handleInput);
     return () => unsubscribe();
   }, []);
-
-  // --- Instrument Change ---
-  const handleInstrumentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newInstrument = e.target.value as InstrumentType;
-    setCurrentInstrument(newInstrument);
-    audioService.setInstrument(newInstrument);
-  };
 
   // --- Game Loop ---
 
@@ -223,7 +214,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ notesData, bpm, onGameOv
         style={{ imageRendering: 'pixelated', touchAction: 'none' }}
       />
       
-      {/* Score HUD */}
+      {/* Score HUD - pointer-events-none is crucial here */}
       <div className="absolute top-4 left-4 font-retro text-white text-lg shadow-sm z-10 pointer-events-none">
         <div>SCORE: {score.toString().padStart(5, '0')}</div>
         {totalNotes > 0 && (
@@ -232,24 +223,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ notesData, bpm, onGameOv
           </div>
         )}
       </div>
-
-      {/* Instrument Selector */}
-      <div className="absolute top-4 right-4 z-20">
-        <div className="relative group">
-          <select 
-            value={currentInstrument} 
-            onChange={handleInstrumentChange}
-            className="appearance-none bg-gray-900/80 text-white font-retro text-[10px] py-2 pl-8 pr-8 border border-indigo-500 rounded hover:bg-indigo-900/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer shadow-lg backdrop-blur-sm"
-          >
-            <option value="piano">PIANO</option>
-            <option value="synth">SYNTH</option>
-            <option value="flute">FLUTE</option>
-            <option value="8bit">8-BIT</option>
-          </select>
-          <Settings className="w-3 h-3 text-indigo-400 absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
-        </div>
-      </div>
-
     </div>
   );
 };
