@@ -3,7 +3,7 @@ import { generateNotesFromInput } from '../services/geminiService';
 import { audioService } from '../services/audioService';
 import { NoteData } from '../types';
 import { Button } from './Button';
-import { Music, Sparkles } from 'lucide-react';
+import { Music, Play } from 'lucide-react';
 
 interface NoteInputProps {
   onNotesReady: (notes: NoteData[], bpm: number) => void;
@@ -16,38 +16,37 @@ export const NoteInput: React.FC<NoteInputProps> = ({ onNotesReady }) => {
 
   const handleSubmit = async () => {
     if (!input.trim()) {
-      setError('Please enter a melody or song name!');
+      setError('Please enter some notes!');
       return;
     }
 
     // CRITICAL: Resume audio context here on a user click event
-    // This ensures the browser allows audio playback later in the game
     audioService.resume();
 
     setIsLoading(true);
     setError('');
 
     try {
+      // This is now a local parser, so it's very fast
       const result = await generateNotesFromInput(input);
       if (result.notes && result.notes.length > 0) {
-        onNotesReady(result.notes, result.bpm || 110);
+        onNotesReady(result.notes, result.bpm || 120);
       } else {
-        setError('Could not generate notes. Try something simpler like "Play C Scale".');
+        setError('No valid notes found. Try formats like "C4 D4 E4".');
       }
     } catch (err) {
-      setError('Something went wrong. Please try again.');
+      setError('Something went wrong parsing your notes.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Pre-defined quick select options
+  // Pre-defined quick select options with raw notes
   const quickOptions = [
-    "C Major Scale",
-    "Twinkle Twinkle Little Star",
-    "Super Mario Theme",
-    "Beethoven's 5th",
-    "Fast Jazz Bebop"
+    { label: "C Major Scale", value: "C4 D4 E4 F4 G4 A4 B4 C5" },
+    { label: "Twinkle Twinkle", value: "C4 C4 G4 G4 A4 A4 G4 F4 F4 E4 E4 D4 D4 C4" },
+    { label: "Arpeggio", value: "C4 E4 G4 C5 E5 G5 C6" },
+    { label: "Chromatic Run", value: "C4 C#4 D4 D#4 E4 F4 F#4 G4" }
   ];
 
   return (
@@ -57,18 +56,19 @@ export const NoteInput: React.FC<NoteInputProps> = ({ onNotesReady }) => {
       </div>
       
       <h2 className="text-2xl font-bold mb-2 text-center font-retro text-indigo-400">
-        Maestro Dino
+        Composer Mode
       </h2>
       <p className="text-gray-400 text-center mb-6 text-sm">
-        Enter a song name or notes. The obstacles will spawn to the rhythm of the music!
+        Type notes directly (e.g., <strong>C4, F#5, H3</strong>). 
+        <br/>Supported octaves: 0-8. H works as B.
       </p>
 
       <div className="w-full mb-4">
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="e.g. 'Play the Star Wars theme' or 'C4 D4 E4 C4'..."
-          className="w-full h-32 p-4 bg-gray-900 text-white rounded-xl border-2 border-gray-600 focus:border-indigo-500 focus:ring-0 transition-all resize-none placeholder-gray-600 font-mono text-sm"
+          placeholder="E.g. C4 D4 E4 F4 G4 A4 B4 C5"
+          className="w-full h-32 p-4 bg-gray-900 text-white rounded-xl border-2 border-gray-600 focus:border-indigo-500 focus:ring-0 transition-all resize-none placeholder-gray-600 font-mono text-lg uppercase"
         />
       </div>
 
@@ -81,11 +81,11 @@ export const NoteInput: React.FC<NoteInputProps> = ({ onNotesReady }) => {
       <div className="flex flex-wrap gap-2 mb-6 justify-center">
         {quickOptions.map(opt => (
           <button
-            key={opt}
-            onClick={() => setInput(opt)}
+            key={opt.label}
+            onClick={() => setInput(opt.value)}
             className="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1 rounded-full transition-colors border border-gray-600"
           >
-            {opt}
+            {opt.label}
           </button>
         ))}
       </div>
@@ -95,8 +95,8 @@ export const NoteInput: React.FC<NoteInputProps> = ({ onNotesReady }) => {
         isLoading={isLoading}
         className="w-full flex items-center justify-center gap-2"
       >
-        <Sparkles className="w-4 h-4" />
-        Generate Level
+        <Play className="w-4 h-4" />
+        Start Game
       </Button>
     </div>
   );
